@@ -1,0 +1,25 @@
+# secrets
+.env
+.env.*
+!.env.example
+
+# python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# données de l'app (commerçants, conversations, commandes)
+backend/data/
+shopify_dump.csv
+
+# node
+node_modules/
+dist/
+*.local
+
+# os / éditeur
+.DS_Store
+.idea/
+.vscode/
