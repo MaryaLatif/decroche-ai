@@ -87,7 +87,7 @@ class UrlSource(BaseModel):
 
 
 class TextSource(BaseModel):
-    text: str = Field(..., min_length=20, max_length=100_000)
+    text: str = Field(..., min_length=3, max_length=100_000)
     label: str | None = "Texte collé"
 
 

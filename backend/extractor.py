@@ -27,7 +27,8 @@ SYSTEM = (
     "Une entrée par produit ou variante. Renseigne source_ids avec les source_id des documents. "
     "Si deux sources se contredisent, garde la plus précise et signale la contradiction dans notes. "
     "Les documents peuvent concerner une chaîne : garde ce qui correspond à l'établissement indiqué "
-    "ou ce qui est général. Tu dois répondre uniquement en appelant l'outil save_catalog."
+    "ou ce qui est général. Tu dois répondre uniquement en appelant l'outil save_catalog. "
+    'Les documents kind="merchant" viennent du commerçant et priment sur le site en cas de contradiction.'
 )
 
 _STR_NULL = {"type": ["string", "null"]}
@@ -121,12 +122,16 @@ def normalize_ids(kn: Knowledge) -> Knowledge:
 
 
 def _context(docs: list[dict]) -> str:
+    ordered = sorted(docs, key=lambda d: d.get("kind") != "merchant")  # commerçant d'abord
     parts, used = [], 0
-    for d in docs:
+    for d in ordered:
         text = d["text"][:20000].replace("</document", "< /document")
-        chunk = f'<document source_id="{d["source_id"]}" origin="{d["origin"]}">\n{text}\n</document>'
+        chunk = (
+            f'<document source_id="{d["source_id"]}" kind="{d.get("kind", "web")}" '
+            f'origin="{d["origin"]}">\n{text}\n</document>'
+        )
         if used + len(chunk) > config.MAX_CONTEXT_CHARS:
-            break
+            continue
         parts.append(chunk)
         used += len(chunk)
     return "\n\n".join(parts)
@@ -134,8 +139,9 @@ def _context(docs: list[dict]) -> str:
 
 def extract_knowledge(business: dict, docs: list[dict], need_hours: bool = False, catalog_known: bool = False) -> Knowledge:
     catalog_hint = (
-        "\n\nLe catalogue produits est déjà connu : mets items à []. Concentre-toi sur description, faq "
-        "(livraison et frais, retrait, délais, commandes, politiques) et notes."
+        "\n\nLe catalogue du site est déjà connu. Dans items, ne mets QUE les produits trouvés dans les "
+        'documents kind="merchant" (PDF, texte du commerçant) ; s\'il n\'y en a pas, mets items à []. '
+        "Concentre-toi aussi sur description, faq (livraison, retrait, délais, politiques) et notes."
         if catalog_known else ""
     )
     hours_hint = (

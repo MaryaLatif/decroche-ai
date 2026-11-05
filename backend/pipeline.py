@@ -27,13 +27,14 @@ def run_collection(bid: str) -> None:
                 pages, errs = crawl(s["url"])
                 errors += errs
                 storage.write_json(storage.path(bid, "documents", f"{s['id']}.json"), pages)
-                docs += [{"source_id": s["id"], "origin": p["url"], "text": p["text"]} for p in pages]
+                docs += [{"source_id": s["id"], "origin": p["url"], "text": p["text"], "kind": "web"} for p in pages]
             else:
                 text = storage.path(bid, "documents", f"{s['id']}.txt").read_text("utf-8")
                 docs.append({
                     "source_id": s["id"],
                     "origin": s.get("label") or s.get("filename") or "texte fourni",
                     "text": text,
+                    "kind": "merchant",
                 })
         if not docs:
             raise RuntimeError("Aucun contenu exploitable. " + "; ".join(errors[:3]))
@@ -51,7 +52,10 @@ def run_collection(bid: str) -> None:
                 kn.notes.append("Horaires Google illisibles : à saisir manuellement.")
 
         if shop_items:
-            kn.items = shop_items
+            by_name = {i.name.strip().lower(): i for i in shop_items}
+            for it in kn.items:  # produits extraits des PDF / textes du commerçant
+                by_name[it.name.strip().lower()] = it
+            kn.items = list(by_name.values())
             normalize_ids(kn)
             kn.notes = [n for n in kn.notes if not re.search(r"prix|catalogue|pages|produit", n, re.I)]
             kn.notes.append(

@@ -80,7 +80,7 @@ export default function SourcesStep({ businessId, onReady, onBack }: Props) {
       </p>
 
       <textarea rows={5} style={{ width: "100%" }} value={text} onChange={(e) => setText(e.target.value)} placeholder="Ou colle ton menu ici" />
-      <button disabled={text.length < 20} onClick={() => run(async () => { await addText(businessId, text); setText(""); })}>
+      <button disabled={text.trim().length < 3} onClick={() => run(async () => { await addText(businessId, text.trim()); setText(""); })}>
         Ajouter le texte
       </button>
 
